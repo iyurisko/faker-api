@@ -10,16 +10,16 @@ module.exports = {
   loginController: async (req, res, file) => {
     try {
       let user = JSON.parse(fs.readFileSync(`./auth/user.json`));
-      user = user.find(v => v.username === req.body.username)
+      user = user.find(v => v.email === req.body.email)
 
-      if (user) {
+      // if (user) {
         const saltedPassword = user.password;
         const successResult = await bcrypt.compare(req.body.password, saltedPassword)
-
+        
+        console.log(successResult)
         if (successResult) {
           const payLoad = {
             "username": user.usename,
-            "role": user.role
           }
 
           const token = jwt.sign(payLoad, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1d' })
@@ -33,9 +33,9 @@ module.exports = {
         } else {
           res.status(404).json({ message: "password/username invalid" })
         }
-      } else {
-        res.status(409).json({ message: "already registered" });
-      }
+      // } else {
+      //   res.status(409).json({ message: "already registered" });
+      // }
     } catch (error) {
       res.status(500).json({ status: false, msg: 'service error' });
     }
@@ -47,9 +47,12 @@ module.exports = {
 
       if (!user) {
         const hash = await bcrypt.hash(req.body.password, 10)
+        
         const newUser = { id: randomId(), ...req.body, password: hash };
         users.push(newUser);
+        
         fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
+        
         res.status(200).json({ message: "success" });
       } else {
         res.status(409).json({ message: "already registered" });
