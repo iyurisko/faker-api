@@ -14,9 +14,13 @@ const { loginController, registerController, verifyToken } = require('./auth/con
 const app = express();
 const port = 7777;
 
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors({
+  credentials: true,
+  origin: 'http://localhost:3000'
+}));
 
 app.get('/', (req, res) => res.send('hello'));
 
@@ -35,9 +39,9 @@ fs.readdir(path.join(__dirname, 'db'), (err, files) => {
 
       app.get(route, (req, res) => getAllController(req, res, file));
       app.get(`${route}/:id`, (req, res) => getByIdController(req, res, file));
-      app.post(route, (req, res, next) => verifyToken(req, res, next), (req, res) => postController(req, res, file));
-      app.put(`${route}/:id`, (req, res, next) => verifyToken(req, res, next), (req, res) => updateController(req, res, file));
-      app.delete(`${route}/:id`,(req, res, next) => verifyToken(req, res, next), (req, res) => deleteController(req, res, file));
+      app.post(route, (req, res) => postController(req, res, file));
+      app.put(`${route}/:id`, (req, res) => updateController(req, res, file));
+      app.delete(`${route}/:id`, (req, res) => deleteController(req, res, file));
     });
   }
 });
