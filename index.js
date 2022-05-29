@@ -14,11 +14,13 @@ const { loginController, registerController, verifyToken } = require('./auth/con
 const app = express();
 const port = 7777;
 
-app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cors());
 app.get('/', (req, res) => res.send('hello'));
+
+
 
 /* Auth Routing */
 app.post('/login', (req, res) => loginController(req, res));
