@@ -1,18 +1,31 @@
-const { readFile, writeFile, randomId, findDataById } = require('./helper.js');
+const {
+  readFile,
+  writeFile,
+  randomId,
+  findDataById,
+  sort,
+  pagination,
+  searching
+} = require('./helper.js');
 
 module.exports = {
   getAllController: (req, res, file) => {
     try {
-      let limit = 10;
-      let skip = 0;
+      const { search, sorting, limit, skip } = req.query;
+      const [searchBy, name] = search ? search.split('-') : [null, null];
+      const [field, sortBy] = sorting ? sorting.split('-') : [null, null];
+      let data = readFile(file);
 
-      if (req.query.limit) limit = parseInt(req.query.limit);
-      if (req.query.skip) skip = parseInt(req.query.skip);
+      // SEARCH FUNC
+      if (name && searchBy) data = data.filter(str => searching(str[searchBy], name))
 
-      const offset = limit + skip;
-      let items = readFile(file);
-      items = items.slice(skip, offset);
-      res.status(200).json({ success: true, data: items });
+      // SORT FUNC
+      if (field && sortBy) data = sort(data, field, sortBy);
+
+      // LIMIT FUNC
+      if (limit || skip) data = pagination(data, limit, skip)
+
+      res.status(200).json({ success: true, data });
     } catch (error) {
       res.status(500).json({ status: false, msg: error });
     }
@@ -30,8 +43,8 @@ module.exports = {
   postController: (req, res, file) => {
     try {
       let items = readFile(file);
-      const item = { id: randomId(), ...req.body };
-      items.push(item);
+      const item = { id: randomId(), ...req.body, create_at: new Date() };
+      items.unshift(item);
       writeFile(file, items);
       res.status(200).json({ success: true, data: item, msg: 'data has been create' });
     } catch (error) {
