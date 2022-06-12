@@ -36,9 +36,9 @@ fs.readdir(path.join(__dirname, 'db'), (err, files) => {
 
       app.get(route, (req, res) => getAllController(req, res, file));
       app.get(`${route}/:id`, (req, res) => getByIdController(req, res, file));
-      app.post(route, (req, res) => postController(req, res, file));
-      app.put(`${route}/:id`, (req, res) => updateController(req, res, file));
-      app.delete(`${route}/:id`, (req, res) => deleteController(req, res, file));
+      app.post(route, (req, res, next) => verifyToken(req, res, next), (req, res) => postController(req, res, file));
+      app.put(`${route}/:id`, (req, res, next) => verifyToken(req, res, next), (req, res) => updateController(req, res, file));
+      app.delete(`${route}/:id`, (req, res, next) => verifyToken(req, res, next), (req, res) => deleteController(req, res, file));
     });
   }
 });
