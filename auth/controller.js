@@ -12,30 +12,25 @@ module.exports = {
       let user = JSON.parse(fs.readFileSync(`./auth/user.json`));
       user = user.find(v => v.email === req.body.email)
 
-      // if (user) {
-        const saltedPassword = user.password;
-        const successResult = await bcrypt.compare(req.body.password, saltedPassword)
-        
-        console.log(successResult)
-        if (successResult) {
-          const payLoad = {
-            "username": user.usename,
-          }
+      const saltedPassword = user.password;
+      const successResult = await bcrypt.compare(req.body.password, saltedPassword)
 
-          const token = jwt.sign(payLoad, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1d' })
-          const users = JSON.parse(fs.readFileSync(`./auth/user.json`));
-          const idx = users.findIndex((user) => user.usename === req.body.usename);
-
-          users[idx] = { ...users[idx], token };
-          fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
-
-          res.status(200).json({ status: "success", token })
-        } else {
-          res.status(404).json({ message: "password/username invalid" })
+      if (successResult) {
+        const payLoad = {
+          "username": user.usename,
         }
-      // } else {
-      //   res.status(409).json({ message: "already registered" });
-      // }
+
+        const token = jwt.sign(payLoad, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1d' })
+        const users = JSON.parse(fs.readFileSync(`./auth/user.json`));
+        const idx = users.findIndex((user) => user.usename === req.body.usename);
+
+        users[idx] = { ...users[idx], token };
+        fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
+
+        res.status(200).json({ status: "success", token })
+      } else {
+        res.status(404).json({ message: "password/username invalid" })
+      }
     } catch (error) {
       res.status(500).json({ status: false, msg: 'service error' });
     }
@@ -47,12 +42,12 @@ module.exports = {
 
       if (!user) {
         const hash = await bcrypt.hash(req.body.password, 10)
-        
+
         const newUser = { id: randomId(), ...req.body, password: hash };
         users.push(newUser);
-        
+
         fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
-        
+
         res.status(200).json({ message: "success" });
       } else {
         res.status(409).json({ message: "already registered" });
@@ -65,7 +60,7 @@ module.exports = {
     try {
       const token = req.headers['authorization'];
 
-      if (!token ) return res.status(403).send("Forbidden!");
+      if (!token) return res.status(403).send("Forbidden!");
 
       jwt.verify(token, JWT_SECRET, (err) => {
         if (err) {
