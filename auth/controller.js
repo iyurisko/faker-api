@@ -1,4 +1,4 @@
-const { randomId, writeFile } = require('../helper.js');
+const { randomId } = require('../helper.js');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');

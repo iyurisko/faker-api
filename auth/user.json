@@ -1,9 +1,7 @@
 [
   {
-    "id": "7fcc17cff9e967c4",
-    "email": "testdev@mail.com",
-    "username": "testdev@mail.com",
-    "password": "$2b$10$OCmHJ2vtI4M1mFrRk8w8mOGavTRbCo0t4nfAAAJDZAa4UzKCt9enC",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NTM1NjA0NzgsImV4cCI6MTY1MzY0Njg3OH0.GwJxU8X-8AVuO2gkVprBdO9VZmb3oEJikanwAbL1jx0"
+    "id": "b2aed093854d1f2b",
+    "username": "test@dev.com",
+    "password": "$2b$10$NjGKHnB0duNXh3xN.z4tSuqcfcnXQHFqZ.NzchRpOgR64NIDUFdoC"
   }
 ]
