@@ -14,9 +14,9 @@ class Server {
   }
 
   authController() {
-    this.api.post('/login',login);
+    this.api.post('/login', login);
     this.api.post('/register', register);
-  }
+  };
 
   crudController() {
     fs.readdir(path.join(__dirname, 'db'), (err, files) => {
@@ -29,38 +29,41 @@ class Server {
 
           this.api.get(route, getAll);
           this.api.get(routeByID, getByID);
-          this.api.post(route, verifyToken,create);
+          this.api.post(route, verifyToken, create);
           this.api.put(routeByID, verifyToken, update);
           this.app.delete(routeByID, verifyToken, del);
         });
       }
     });
-  }
+  };
 
   logger() {
     const typeLog = {
       err: chalk.red('[ERROR]'),
-      success: chalk.blue('[SUCCESS]'),
+      ok: chalk.blue('[SUCCESS]'),
       notFound: chalk.yellow('[Not Found]')
-    }
-    global.logger = ({type, msg}) => console.log(`${ typeLog[type] } ${msg}`);
-  }
+    };
+    global.logger = ({ type, route, ctx }) => {
+      console.log(`${typeLog[type]} ${route} `, ctx);
+    };
+  };
 
   init() {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cors());
-    this.app.use('/', this.api)
+    this.app.use('/', this.api);
     this.logger()
-  
+
+
     this.authController();
     this.crudController();
 
     this.app.listen(this.port, () => {
-      console.log(`Server running on port:${this.port}`)
+      console.log(`Server running on port:${this.port}`);
     });
-  }
-}
+  };
+};
 
 const server = new Server();
 server.init();

@@ -1,4 +1,4 @@
-const { randomId, apiError } = require('../helper.js');
+const { randomId, resError, resSuccess } = require('../helper.js');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -11,7 +11,7 @@ module.exports = {
     try {
 
       if (!req.body.email || !req.body.password) {
-        return apiError({ req, res, err: "email or password is missing!" })
+        return resError({ req, res, msg: "email or password is missing!" })
       }
 
       let user = JSON.parse(fs.readFileSync(`./auth/user.json`));
@@ -19,7 +19,7 @@ module.exports = {
       const succesHash = await bcrypt.compare(req.body.password, user.password)
 
       if (!succesHash) {
-        return apiError({ req, res, err: "password/username invalid" })
+        return resError({ req, res, msg: "password/username invalid" })
       }
 
       const payLoad = { "username": user.email.split('@')[0] }
@@ -31,11 +31,10 @@ module.exports = {
       users[idx] = { ...users[idx], token };
       fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
 
-      logger({ type: 'success', msg: `POST /login -->  success` });
+      logger({ type: 'success', method: req.method, path: req.path, ctx: token });
       res.status(200).json({ status: "success", token })
     } catch (err) {
-      logger({ type: 'err', msg: `POST /login --> ${err}` });
-      apiError({ req, res, err: 'service error' })
+      resError({ req, res, err })
     }
   },
   register: async (req, res) => {
@@ -44,8 +43,8 @@ module.exports = {
       const user = users.find(v => v.username === req.body.username);
 
       if (user) {
-        logger({ type: 'err', msg: `POST /register --> already registered` });
-        return res.status(409).json({ message: "already registered" });
+        logger({ type: 'err', method: 'POST', path: '/register', ctx: 'already registered' });
+        resError({ req, res, code: 409, msg: "already registered" })
       };
 
       const hash = await bcrypt.hash(req.body.password, 10)
@@ -54,11 +53,10 @@ module.exports = {
       users.push(newUser);
       fs.writeFileSync(`./auth/user.json`, JSON.stringify(users, null, 2), 'utf8')
 
-      logger({ type: 'success', msg: `POST /register -->  success` });
-      res.status(200).json({ message: "success" });
+      logger({ type: 'ok', method: 'POST', path: req.path, ctx: 'register success!' });
+      resSuccess({ msg: 'register success!'} )
     } catch (err) {
-      logger({ type: 'err', msg: `POST /register --> ${err}` });
-      apiError({ req, res, err: 'service error' })
+      resError({ req, res, err })
     }
   },
   verifyToken: (req, res, next) => {
@@ -67,16 +65,14 @@ module.exports = {
 
       jwt.verify(token, JWT_SECRET, (err) => {
         if (err) {
-          logger({ type: 'err', msg: `POST /verifyToken --> ${err}` });
-          res.status(403).send("Forbidden!");
+          resError({ req, res, code: 403,  msg: "Forbidden" });
         } else {
           next();
         }
       });
 
     } catch (err) {
-      logger({ type: 'err', msg: `POST /verifyToken --> ${err}` });
-      apiError({ req, res, err: 'service error' })
+      resError({ req, res, err })
     }
   },
 }

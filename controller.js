@@ -1,3 +1,4 @@
+const fs = require('fs');
 const {
   readFile,
   writeFile,
@@ -6,9 +7,9 @@ const {
   sort,
   pagination,
   searching,
-  apiSuccess,
-  apiError,
-  apiNotFound
+  resSuccess,
+  resError,
+  resNotFound
 } = require('./helper.js');
 
 module.exports = {
@@ -28,19 +29,19 @@ module.exports = {
       // LIMIT FUNC
       if (limit || skip) data = pagination(data, limit, skip)
 
-      apiSuccess({req, res, data })
+      resSuccess({ req, res, data })
     } catch (err) {
-      apiError({req, res, err});
+      resError({ req, res, err });
     }
   },
   getByID: (req, res) => {
     try {
       const data = findDataById(req.path, req.params.id);
 
-      if (!data) return apiNotFound(req, res);
-      apiSuccess({req, res, data })
+      if (!data) return resNotFound(req, res);
+      resSuccess({ req, res, data })
     } catch (err) {
-      apiError({req, res, err});
+      resError({ req, res, err });
     }
   },
   create: (req, res) => {
@@ -51,27 +52,27 @@ module.exports = {
       db.unshift(data);
       writeFile(req.path, db);
 
-      apiSuccess({req, res, data, msg: `data has been create!` })
+      resSuccess({ req, res, data, msg: `data has been create!` })
     } catch (err) {
-      apiError({req, res, err});
+      resError({ req, res, err });
     }
   },
   update: (req, res) => {
     try {
       let db = readFile(req.path);
-      let data = findDataById(req.path, req.params.id);
+      let row = findDataById(req.path, req.params.id);
 
-      if (!data) return apiNotFound(req, res);
+      if (!row) return resNotFound(req, res);
 
       data = { ...row, ...req.body };
       const idx = db.findIndex((p) => p.id === req.params.id);
-      
+
       db[idx] = data;
       writeFile(req.path, db);
 
-      apiSuccess({req, res, data, msg: `data has been updated!` })
+      resSuccess({ req, res, data, msg: `data has been updated!` })
     } catch (err) {
-      apiError({req, res, err});
+      resError({ req, res, err });
     }
   },
   del: (req, res) => {
@@ -79,15 +80,15 @@ module.exports = {
       let db = readFile(req.path);
       const data = findDataById(req.path, req.params.id);
 
-      if (!data) return apiNotFound(req, res);
+      if (!data) return resNotFound(req, res);
 
       db = db.filter((p) => p.id !== req.params.id);
       writeFile(req.path, db);
 
-      apiSuccess({req, res, data, msg: `data has been deleted!` })
+      resSuccess({ req, res, data, msg: `data has been deleted!` })
     } catch (err) {
-      apiError({req, res, err});
+      resError({ req, res, err });
     }
-  }
+  },
 }
 
