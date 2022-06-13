@@ -1,5 +1,5 @@
 const fs = require('fs')
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 module.exports = {
   writeFile: (path, content) => {
@@ -38,26 +38,23 @@ module.exports = {
     const o = m + n;
     return x.slice(n, o);
   },
-  apiSuccess: ({ req, res, data, msg }) => {
-    const path = req.path.split('/')[1];
-    const logMsg = `${req.method} /${path} -->  ${JSON.stringify(data, null, 2)}`
-    logger({ type: 'success', msg: logMsg });
-    res.status(200).json({ success: true, data, msg });
+  resSuccess: ({ req, res, data = null, msg } = {}) => {
+    const route = `${req.method} - ${req.path}`;
+    logger({ type: 'ok', route, ctx: data || msg });
+    res.status(200).json({ msg: msg || 'success', data });
   },
-  apiError: ({ req, res, err }) => {
-    const path = req.path.split('/')[1];
+  resError: ({ req, res, err, code, msg }) => {
+    const route = `${req.method} - ${req.path}`;
     logger({
       type: 'err',
-      msg: `${req.method} /${path} --> ${err}`
+      route,
+      ctx: String(err || msg || 'error!')
     });
-    res.status(500).json({ status: false, msg: String(err) });
+    res.status(code || 500).json({ msg: msg || 'Server Error' });
   },
-  apiNotFound: (req, res) => {
-    const path = req.path.split('/')[1];
-    logger({
-      type: 'notFound',
-      msg: `${req.method}  /${path} --> not found!`
-    });
-    res.status(404).json({ success: false, msg: `data not found!` });
+  resNotFound: (req, res) => {
+    const route = `${req.method} - ${req.path}`;
+    logger({ type: 'notFound', route, ctx: 'Data not found!' });
+    res.status(404).json({ msg: `Data not found!` });
   },
 }
