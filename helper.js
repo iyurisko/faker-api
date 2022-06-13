@@ -2,41 +2,36 @@ const fs = require('fs')
 const crypto = require('crypto');
 
 module.exports = {
-  writeFile: (path, content) => {
-    return fs.writeFileSync(
-      `./db/${path.split('/')[1]}.json`,
-      JSON.stringify(content, null, 2), 'utf8',
-      (err) => console.log(err)
-    )
+  getAll: (req, res) => {
+    try {
+      const { search, sorting, limit, skip } = req.query;
+      const [searchBy, name] = search ? search.split('-') : [null, null];
+      const [field, sortBy] = sorting ? sorting.split('-') : [null, null];
+      let data = readFile(req.path);
+
+      // SEARCH FUNC
+      if (name && searchBy) data = data.filter(str => searching(str[searchBy], name))
+
+      // SORT FUNC
+      if (field && sortBy) data = sort(data, field, sortBy);
+
+      // LIMIT FUNC
+      if (limit || skip) data = pagination(data, limit, skip)
+
+      resSuccess({ req, res, data })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
-  readFile: (path) => {
-    return JSON.parse(fs.readFileSync(`./db/${path.split('/')[1]}.json`));
-  },
-  findDataById: (path, id) => {
-    const data = JSON.parse(fs.readFileSync(`./db/${path.split('/')[1]}.json`));
-    return data.find((p) => p.id === id)
-  },
-  randomId: () => {
-    return crypto.randomBytes(8).toString("hex");
-  },
-  checkFileSize: filename => {
-    const stats = fs.statSync(filename);
-    return stats.size / (1024 * 1024);
-  },
-  searching: (x, y) => x.toLowerCase().includes(y.toLowerCase()),
-  sort: (x, y, z) => {
-    const compare = (a, b) => (String(a)).localeCompare(String(b));
-    if (z === 'DESC') return x.sort((a, b) => compare(a[y], b[y]));
-    if (z === 'ASC') return x.sort((a, b) => compare(b[y], a[y]));
-    return x;
-  },
-  pagination: (x, y, z) => {
-    let m = 10; // limit
-    let n = 0; // skip
-    if (y) m = parseInt(y);
-    if (z) n = parseInt(z);
-    const o = m + n;
-    return x.slice(n, o);
+  getByID: (req, res) => {
+    try {
+      const data = findDataById(req.path, req.params.id);
+
+      if (!data) return resNotFound(req, res);
+      resSuccess({ req, res, data })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
   resSuccess: ({ req, res, data = null, msg } = {}) => {
     const route = `${req.method} - ${req.path}`;
