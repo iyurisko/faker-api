@@ -5,16 +5,19 @@ const {
   findDataById,
   sort,
   pagination,
-  searching
+  searching,
+  apiSuccess,
+  apiError,
+  apiNotFound
 } = require('./helper.js');
 
 module.exports = {
-  getAllController: (req, res, file) => {
+  getAll: (req, res) => {
     try {
       const { search, sorting, limit, skip } = req.query;
       const [searchBy, name] = search ? search.split('-') : [null, null];
       const [field, sortBy] = sorting ? sorting.split('-') : [null, null];
-      let data = readFile(file);
+      let data = readFile(req.path);
 
       // SEARCH FUNC
       if (name && searchBy) data = data.filter(str => searching(str[searchBy], name))
@@ -25,65 +28,65 @@ module.exports = {
       // LIMIT FUNC
       if (limit || skip) data = pagination(data, limit, skip)
 
-      res.status(200).json({ success: true, data });
-    } catch (error) {
-      res.status(500).json({ status: false, msg: error });
+      apiSuccess({req, res, data })
+    } catch (err) {
+      apiError({req, res, err});
     }
   },
-  getByIdController: (req, res, file) => {
+  getByID: (req, res) => {
     try {
-      const collectionName = file.replace(".json", "");
-      const item = findDataById(file, req.params.id);
-      if (item) return res.status(200).json({ success: true, data: item });
-      return res.status(404).json({ success: false, msg: `${collectionName} not found!` });
-    } catch (error) {
-      res.status(500).json({ status: false, msg: error });
+      const data = findDataById(req.path, req.params.id);
+
+      if (!data) return apiNotFound(req, res);
+      apiSuccess({req, res, data })
+    } catch (err) {
+      apiError({req, res, err});
     }
   },
-  postController: (req, res, file) => {
+  create: (req, res) => {
     try {
-      let items = readFile(file);
-      const item = { id: randomId(), ...req.body, create_at: new Date() };
-      items.unshift(item);
-      writeFile(file, items);
-      res.status(200).json({ success: true, data: item, msg: 'data has been create' });
-    } catch (error) {
-      res.status(500).json({ status: false, msg: error });
+      let db = readFile(req.path);
+      const data = { id: randomId(), ...req.body, create_at: new Date() };
+
+      db.unshift(data);
+      writeFile(req.path, db);
+
+      apiSuccess({req, res, data, msg: `data has been create!` })
+    } catch (err) {
+      apiError({req, res, err});
     }
   },
-  updateController: (req, res, file) => {
+  update: (req, res) => {
     try {
-      const collectionName = file.replace(".json", "");
-      let items = readFile(file);
-      const item = findDataById(file, req.params.id);
-      if (item) {
-        const updateItem = { ...item, ...req.body };
-        console.log(updateItem);
-        const idx = items.findIndex((p) => p.id === req.params.id);
-        items[idx] = updateItem;
-        writeFile(file, items);
-        res.status(200).json({ success: true, data: updateItem, msg: `${collectionName} deleted!` });
-      } else {
-        res.status(404).json({ success: false, msg: `${collectionName} not found!` });
-      }
-    } catch (error) {
-      res.status(500).json({ status: false, msg: error });
+      let db = readFile(req.path);
+      let data = findDataById(req.path, req.params.id);
+
+      if (!data) return apiNotFound(req, res);
+
+      data = { ...row, ...req.body };
+      const idx = db.findIndex((p) => p.id === req.params.id);
+      
+      db[idx] = data;
+      writeFile(req.path, db);
+
+      apiSuccess({req, res, data, msg: `data has been updated!` })
+    } catch (err) {
+      apiError({req, res, err});
     }
   },
-  deleteController: (req, res, file) => {
+  del: (req, res) => {
     try {
-      const collectionName = file.replace(".json", "");
-      let items = readFile(file);
-      const item = findDataById(file, req.params.id);
-      if (item) {
-        items = items.filter((p) => p.id !== req.params.id);
-        writeFile(file, items);
-        res.status(200).json({ success: true, msg: `${collectionName} deleted!` });
-      } else {
-        res.status(404).json({ success: false, msg: `${collectionName} not found!` });
-      }
-    } catch (error) {
-      res.status(500).json({ status: false, msg: error });
+      let db = readFile(req.path);
+      const data = findDataById(req.path, req.params.id);
+
+      if (!data) return apiNotFound(req, res);
+
+      db = db.filter((p) => p.id !== req.params.id);
+      writeFile(req.path, db);
+
+      apiSuccess({req, res, data, msg: `data has been deleted!` })
+    } catch (err) {
+      apiError({req, res, err});
     }
   }
 }

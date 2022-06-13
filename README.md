@@ -36,18 +36,55 @@ DEL  /<route>/:id
 
 ### 🔒 AUTH API
 
-#### LOGIN -> POST /login
+## LOGIN -> POST /login
 
 ```
-username string required
+email string required
 password string required
 ```
 
-#### REGISTER -> POST /register
+## REGISTER -> POST /register
 
 ```
-username string required
+email string required
 password string required
 ```
 
+## DEFAULT ACCOUNT 
+
+```
+  "email": "test@dev.com",
+  "password": "tes12345"
+```
+
+### QUERY PARAMS SORTING
+
+## SORTING
+
+```
+ASC  -> /<route>?sorting={fields}-ASC
+DESC -> /<route>?sorting={fields}-DESC
+
+example: 
+
+/employee?sorting=name-ASC
+/employee?sorting=name-DESC
+
+```
+
+## SEARCH
+
+```
+/<route>?search={fields}-{searchVal}
+
+example: /employee?search=name-john
+```
+
+## LIMIT AND SKIP
+
+```
+/<route>?limit={limit}&skip={skip}
+
+example: /employee?limit=2&skip=4
+```
 
