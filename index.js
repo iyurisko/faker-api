@@ -4,18 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
 const { create, del, update, getAll, getByID } = require('./controller.js');
-const { login, register, verifyToken } = require('./auth/controller.js');
 
 class Server {
   constructor() {
     this.port = 7777;
     this.app = express();
     this.api = express.Router();
-  }
-
-  authController() {
-    this.api.post('/login',login);
-    this.api.post('/register', register);
   }
 
   crudController() {
@@ -29,9 +23,9 @@ class Server {
 
           this.api.get(route, getAll);
           this.api.get(routeByID, getByID);
-          this.api.post(route, verifyToken,create);
-          this.api.put(routeByID, verifyToken, update);
-          this.app.delete(routeByID, verifyToken, del);
+          this.api.post(route, create);
+          this.api.put(routeByID, update);
+          this.app.delete(routeByID, del);
         });
       }
     });
@@ -53,7 +47,6 @@ class Server {
     this.app.use('/', this.api)
     this.logger()
   
-    this.authController();
     this.crudController();
 
     this.app.listen(this.port, () => {
