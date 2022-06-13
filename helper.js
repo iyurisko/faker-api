@@ -1,63 +1,93 @@
-const fs = require('fs')
-const crypto = require('crypto')
+const fs = require('fs');
+const {
+  readFile,
+  writeFile,
+  randomId,
+  findDataById,
+  sort,
+  pagination,
+  searching,
+  resSuccess,
+  resError,
+  resNotFound
+} = require('./helper.js');
 
 module.exports = {
-  writeFile: (path, content) => {
-    return fs.writeFileSync(
-      `./db/${path.split('/')[1]}.json`,
-      JSON.stringify(content, null, 2), 'utf8',
-      (err) => console.log(err)
-    )
+  getAll: (req, res) => {
+    try {
+      const { search, sorting, limit, skip } = req.query;
+      const [searchBy, name] = search ? search.split('-') : [null, null];
+      const [field, sortBy] = sorting ? sorting.split('-') : [null, null];
+      let data = readFile(req.path);
+
+      // SEARCH FUNC
+      if (name && searchBy) data = data.filter(str => searching(str[searchBy], name))
+
+      // SORT FUNC
+      if (field && sortBy) data = sort(data, field, sortBy);
+
+      // LIMIT FUNC
+      if (limit || skip) data = pagination(data, limit, skip)
+
+      resSuccess({ req, res, data })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
-  readFile: (path) => {
-    return JSON.parse(fs.readFileSync(`./db/${path.split('/')[1]}.json`));
+  getByID: (req, res) => {
+    try {
+      const data = findDataById(req.path, req.params.id);
+
+      if (!data) return resNotFound(req, res);
+      resSuccess({ req, res, data })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
-  findDataById: (path, id) => {
-    const data = JSON.parse(fs.readFileSync(`./db/${path.split('/')[1]}.json`));
-    return data.find((p) => p.id === id)
+  create: (req, res) => {
+    try {
+      let db = readFile(req.path);
+      const data = { id: randomId(), ...req.body, create_at: new Date() };
+
+      db.unshift(data);
+      writeFile(req.path, db);
+
+      resSuccess({ req, res, data, msg: `data has been create!` })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
-  randomId: () => {
-    return crypto.randomBytes(8).toString("hex");
+  update: (req, res) => {
+    try {
+      let db = readFile(req.path);
+      let row = findDataById(req.path, req.params.id);
+
+      if (!row) return resNotFound(req, res);
+
+      data = { ...row, ...req.body };
+      const idx = db.findIndex((p) => p.id === req.params.id);
+
+      db[idx] = data;
+      writeFile(req.path, db);
+
+      resSuccess({ req, res, data, msg: `data has been updated!` })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
-  checkFileSize: filename => {
-    const stats = fs.statSync(filename);
-    return stats.size / (1024 * 1024);
-  },
-  searching: (x, y) => x.toLowerCase().includes(y.toLowerCase()),
-  sort: (x, y, z) => {
-    const compare = (a, b) => (String(a)).localeCompare(String(b));
-    if (z === 'DESC') return x.sort((a, b) => compare(a[y], b[y]));
-    if (z === 'ASC') return x.sort((a, b) => compare(b[y], a[y]));
-    return x;
-  },
-  pagination: (x, y, z) => {
-    let m = 10; // limit
-    let n = 0; // skip
-    if (y) m = parseInt(y);
-    if (z) n = parseInt(z);
-    const o = m + n;
-    return x.slice(n, o);
-  },
-  apiSuccess: ({ req, res, data, msg }) => {
-    const path = req.path.split('/')[1];
-    const logMsg = `${req.method} /${path} -->  ${JSON.stringify(data, null, 2)}`
-    logger({ type: 'success', msg: logMsg });
-    res.status(200).json({ success: true, data, msg });
-  },
-  apiError: ({ req, res, err }) => {
-    const path = req.path.split('/')[1];
-    logger({
-      type: 'err',
-      msg: `${req.method} /${path} --> ${err}`
-    });
-    res.status(500).json({ status: false, msg: String(err) });
-  },
-  apiNotFound: (req, res) => {
-    const path = req.path.split('/')[1];
-    logger({
-      type: 'notFound',
-      msg: `${req.method}  /${path} --> not found!`
-    });
-    res.status(404).json({ success: false, msg: `data not found!` });
+  del: (req, res) => {
+    try {
+      let db = readFile(req.path);
+      const data = findDataById(req.path, req.params.id);
+
+      if (!data) return resNotFound(req, res);
+
+      db = db.filter((p) => p.id !== req.params.id);
+      writeFile(req.path, db);
+
+      resSuccess({ req, res, data, msg: `data has been deleted!` })
+    } catch (err) {
+      resError({ req, res, err });
+    }
   },
 }
